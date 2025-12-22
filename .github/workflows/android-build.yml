@@ -1,55 +1,34 @@
-name: Build and Send Android APK
+name: Test Send Email
 on:
   push:
     branches:
-      - main  # Déclenche le workflow sur push dans la branche main
+      - main
 
 jobs:
   build:
-    name: Build APK
+    name: Test Email
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Récupération du code source
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Installation de Node.js
+      # 2️⃣ Setup Node.js (optionnel ici si tu ne build pas)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # 3️⃣ Installation des dépendances
-      - name: Install dependencies
-        run: npm install
-
-      # 4️⃣ Installation de Java JDK
+      # 3️⃣ Setup Java (optionnel si pas de build)
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 5️⃣ Donner les permissions d’exécution à Gradle
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
-
-      # 6️⃣ Build Release APK
-      - name: Build Release APK
-        run: |
-          cd android
-          ./gradlew assembleRelease
-
-      # 7️⃣ Upload APK comme artifact GitHub (optionnel)
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-
-      # 8️⃣ Envoi de l’APK par email
-      - name: Send APK by Email
+      # 4️⃣ Envoyer email test
+      - name: Send test email
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -57,7 +36,11 @@ jobs:
           username: ${{ secrets.GMAIL_USERNAME }}
           password: ${{ secrets.GMAIL_APP_PASSWORD }}
           from: ${{ secrets.GMAIL_USERNAME }}
-          subject: "Nouvel APK Build Release"
-          body: "Bonjour,\n\nL'APK de l'application a été généré et est attaché à cet email.\n\nCordialement."
           to: "wkhlaifi@smartech-tn.com"
-          attachments: "android/app/build/outputs/apk/release/app-release.apk"
+          subject: "Test Email GitHub Actions"
+          body: |
+            Bonjour,
+
+            Ceci est un test d'envoi d'email via GitHub Actions.
+
+            Cordialement.
