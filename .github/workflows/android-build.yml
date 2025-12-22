@@ -1,53 +1,62 @@
-name: Build Android APK
-# Nom du workflow qui s'affiche dans GitHub Actions.
-
+name: Build and Send Android APK
 on:
   push:
     branches:
-      - main  # Déclenche ce workflow uniquement quand il y a un push sur la branche 'main'.
+      - main  # Déclenche le workflow sur push dans la branche main
 
 jobs:
   build:
     name: Build APK
-    runs-on: ubuntu-latest  # Utilise une machine virtuelle Ubuntu pour exécuter le job.
+    runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Récupération du code source
       - name: Checkout repository
         uses: actions/checkout@v3
-        # Récupère le code source de ton dépôt sur la VM.
 
+      # 2️⃣ Installation de Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-        # Installe Node.js version 20, nécessaire pour React Native et npm.
 
+      # 3️⃣ Installation des dépendances
       - name: Install dependencies
         run: npm install
-        # Installe toutes les dépendances de ton projet (node_modules).
 
+      # 4️⃣ Installation de Java JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
-        # Installe Java JDK 17, requis pour compiler le projet Android avec Gradle.
 
+      # 5️⃣ Donner les permissions d’exécution à Gradle
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
-        # Donne les droits d’exécution au script Gradle wrapper (gradlew).
 
+      # 6️⃣ Build Release APK
       - name: Build Release APK
         run: |
           cd android
           ./gradlew assembleRelease
-        # Va dans le dossier android et compile le projet en mode Release.
-        # Cela génère l'APK dans android/app/build/outputs/apk/release/.
 
+      # 7️⃣ Upload APK comme artifact GitHub (optionnel)
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
-        # Upload l'APK généré comme artefact dans GitHub Actions.
-        # Tu pourras le télécharger depuis l’interface Actions.
+
+      # 8️⃣ Envoi de l’APK par email
+      - name: Send APK by Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.GMAIL_USERNAME }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "Nouvel APK Build Release"
+          body: "Bonjour,\n\nL'APK de l'application a été généré et est attaché à cet email.\n\nCordialement."
+          to: "wkhlaifi@smartech-tn.com"
+          attachments: "android/app/build/outputs/apk/release/app-release.apk"
