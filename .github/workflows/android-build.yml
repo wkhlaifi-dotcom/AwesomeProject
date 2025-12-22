@@ -1,4 +1,4 @@
-name: Test Send Email
+name: Build and Send Android APK
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Test Email
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
@@ -14,21 +14,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js (optionnel ici si tu ne build pas)
+      # 2️⃣ Setup Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # 3️⃣ Setup Java (optionnel si pas de build)
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Setup Java
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4️⃣ Envoyer email test
-      - name: Send test email
+      # 5️⃣ Grant execute permission for gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+
+      # 6️⃣ Build Release APK
+      - name: Build Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      # 7️⃣ Upload APK comme artifact
+      - name: Upload APK
+        id: upload-apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      # 8️⃣ Envoi email avec lien vers l’artifact
+      - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -36,11 +58,12 @@ jobs:
           username: ${{ secrets.GMAIL_USERNAME }}
           password: ${{ secrets.GMAIL_APP_PASSWORD }}
           from: ${{ secrets.GMAIL_USERNAME }}
-          to: "wkhlaifi@smartech-tn.com"
-          subject: "Test Email GitHub Actions"
+          subject: "Nouvel APK Build Release"
           body: |
             Bonjour,
-
-            Ceci est un test d'envoi d'email via GitHub Actions.
-
+            
+            L'APK de l'application a été généré.  
+            Vous pouvez le télécharger ici : ${{ steps.upload-apk.outputs.artifact_url }}
+            
             Cordialement.
+          to: "wkhlaifi@smartech-tn.com"
