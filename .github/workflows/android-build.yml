@@ -1,0 +1,53 @@
+name: Build Android APK
+# Nom du workflow qui s'affiche dans GitHub Actions.
+
+on:
+  push:
+    branches:
+      - main  # Déclenche ce workflow uniquement quand il y a un push sur la branche 'main'.
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest  # Utilise une machine virtuelle Ubuntu pour exécuter le job.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        # Récupère le code source de ton dépôt sur la VM.
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+        # Installe Node.js version 20, nécessaire pour React Native et npm.
+
+      - name: Install dependencies
+        run: npm install
+        # Installe toutes les dépendances de ton projet (node_modules).
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+        # Installe Java JDK 17, requis pour compiler le projet Android avec Gradle.
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+        # Donne les droits d’exécution au script Gradle wrapper (gradlew).
+
+      - name: Build Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+        # Va dans le dossier android et compile le projet en mode Release.
+        # Cela génère l'APK dans android/app/build/outputs/apk/release/.
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+        # Upload l'APK généré comme artefact dans GitHub Actions.
+        # Tu pourras le télécharger depuis l’interface Actions.
