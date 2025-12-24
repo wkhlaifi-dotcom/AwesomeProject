@@ -1,4 +1,4 @@
-name: Build APK, Upload to OneDrive and Send Email
+name: Build, Upload APK and Send Email
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build APK
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       PATH: $HOME/.local/bin:$PATH   # pour que rclone installé localement soit trouvé
 
@@ -16,8 +16,6 @@ jobs:
       # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       # 2️⃣ Setup Node.js
       - name: Set up Node.js
@@ -46,29 +44,35 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
-      # 7️⃣ Installer rclone localement
+      # 7️⃣ Upload APK comme artifact GitHub
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      # 8️⃣ Installer rclone localement
       - name: Install rclone locally
         run: |
           curl -O https://downloads.rclone.org/v1.72.1/rclone-v1.72.1-linux-amd64.zip
           unzip rclone-v1.72.1-linux-amd64.zip
-          mkdir -p ~/.local/bin
           cp rclone-v1.72.1-linux-amd64/rclone ~/.local/bin/
           chmod +x ~/.local/bin/rclone
 
-      # 8️⃣ Ajouter rclone config depuis secret
+      # 9️⃣ Ajouter rclone config depuis secret
       - name: Setup rclone config
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
-      # 9️⃣ Upload APK vers OneDrive et obtenir lien partageable
+      # 🔟 Upload APK vers OneDrive et obtenir lien partageable
       - name: Upload APK to OneDrive
         run: |
           rclone copy android/app/build/outputs/apk/release/app-release.apk onedrive2:ApkUploads -v
           LINK=$(rclone link onedrive2:ApkUploads/app-release.apk)
           echo "APK_LINK=$LINK" >> $GITHUB_ENV
 
-      # 🔟 Envoyer email avec le lien OneDrive
+      # 1️⃣1️⃣ Envoyer email avec le lien OneDrive
       - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
@@ -81,8 +85,8 @@ jobs:
           body: |
             Bonjour,
 
-            L'APK de l'application a été généré et uploadé sur OneDrive.  
-            Vous pouvez le télécharger directement ici : ${{ env.APK_LINK }}
+            L'APK de l'application a été généré.  
+            Vous pouvez le télécharger ici (OneDrive) : ${{ env.APK_LINK }}
 
             Cordialement.
           to: "wkhlaifi@smartech-tn.com"
