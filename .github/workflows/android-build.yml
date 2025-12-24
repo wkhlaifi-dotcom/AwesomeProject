@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    env:
+      PATH: $HOME/.local/bin:$PATH   # pour que rclone installé localement soit trouvé
 
     steps:
       # 1️⃣ Checkout repository
@@ -49,10 +51,13 @@ jobs:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
-      # 8️⃣ Installer rclone
-      - name: Install rclone
+      # 8️⃣ Installer rclone localement
+      - name: Install rclone locally
         run: |
-          curl https://rclone.org/install.sh | bash
+          curl -O https://downloads.rclone.org/v1.72.1/rclone-v1.72.1-linux-amd64.zip
+          unzip rclone-v1.72.1-linux-amd64.zip
+          cp rclone-v1.72.1-linux-amd64/rclone ~/.local/bin/
+          chmod +x ~/.local/bin/rclone
 
       # 9️⃣ Ajouter rclone config depuis secret
       - name: Setup rclone config
