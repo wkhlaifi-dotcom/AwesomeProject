@@ -1,4 +1,5 @@
-name: Build and Send Android APK
+name: Build, Upload APK and Send Email
+
 on:
   push:
     branches:
@@ -41,15 +42,32 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
-      # 7️⃣ Upload APK comme artifact
-      - name: Upload APK
-        id: upload-apk
+      # 7️⃣ Upload APK comme artifact GitHub
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
-      # 8️⃣ Envoi email avec lien vers l’artifact
+      # 8️⃣ Installer rclone
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | bash
+
+      # 9️⃣ Ajouter rclone config depuis secret
+      - name: Setup rclone config
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+
+      # 🔟 Upload APK vers OneDrive et obtenir lien partageable
+      - name: Upload APK to OneDrive
+        run: |
+          rclone copy android/app/build/outputs/apk/release/app-release.apk onedrive2:ApkUploads -v
+          LINK=$(rclone link onedrive2:ApkUploads/app-release.apk)
+          echo "APK_LINK=$LINK" >> $GITHUB_ENV
+
+      # 1️⃣1️⃣ Envoyer email avec le lien OneDrive
       - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
@@ -63,8 +81,7 @@ jobs:
             Bonjour,
 
             L'APK de l'application a été généré.  
-            Vous pouvez le télécharger ici : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts
+            Vous pouvez le télécharger ici (OneDrive) : ${{ env.APK_LINK }}
 
             Cordialement.
-
           to: "wkhlaifi@smartech-tn.com"
