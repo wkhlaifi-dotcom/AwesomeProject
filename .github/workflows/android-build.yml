@@ -10,75 +10,70 @@ jobs:
     name: Build APK
     runs-on: ubuntu-latest
     env:
-      PATH: $HOME/.local/bin:$PATH   # pour que rclone installé localement soit trouvé
+      PATH: $HOME/.local/bin:$PATH   # Pour que rclone installé localement soit trouvé
 
     steps:
-      # 1️⃣ Installer tar et unzip (au cas où)
-      - name: Ensure tar and unzip are installed
-        run: sudo apt-get update && sudo apt-get install -y tar unzip curl
-
-      # 2️⃣ Checkout repository
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Evite extraction d'archive si tar manquant
 
-      # 3️⃣ Setup Node.js
+      # 2️⃣ Setup Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # 4️⃣ Installer dépendances npm
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 5️⃣ Setup Java
+      # 4️⃣ Setup Java
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 6️⃣ Grant execute permission for gradlew
+      # 5️⃣ Grant execute permission for gradlew
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      # 7️⃣ Build Release APK
+      # 6️⃣ Build Release APK
       - name: Build Release APK
         run: |
           cd android
           ./gradlew assembleRelease
 
-      # 8️⃣ Upload APK comme artifact GitHub
+      # 7️⃣ Upload APK comme artifact GitHub
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
-      # 9️⃣ Installer rclone localement
+      # 8️⃣ Installer rclone localement (sans sudo)
       - name: Install rclone locally
         run: |
           curl -O https://downloads.rclone.org/v1.72.1/rclone-v1.72.1-linux-amd64.zip
           unzip rclone-v1.72.1-linux-amd64.zip
+          mkdir -p ~/.local/bin
           cp rclone-v1.72.1-linux-amd64/rclone ~/.local/bin/
           chmod +x ~/.local/bin/rclone
 
-      # 🔟 Ajouter rclone config depuis secret
+      # 9️⃣ Ajouter rclone config depuis secret
       - name: Setup rclone config
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
-      # 1️⃣1️⃣ Upload APK vers OneDrive et obtenir lien partageable
+      # 🔟 Upload APK vers OneDrive et obtenir lien partageable
       - name: Upload APK to OneDrive
         run: |
           rclone copy android/app/build/outputs/apk/release/app-release.apk onedrive2:ApkUploads -v
           LINK=$(rclone link onedrive2:ApkUploads/app-release.apk)
           echo "APK_LINK=$LINK" >> $GITHUB_ENV
 
-      # 1️⃣2️⃣ Envoyer email avec le lien OneDrive
+      # 1️⃣1️⃣ Envoyer email avec le lien OneDrive
       - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
