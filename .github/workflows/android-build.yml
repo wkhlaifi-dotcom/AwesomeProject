@@ -61,9 +61,10 @@ jobs:
           subject: "Nouvel APK Build Release"
           body: |
             Bonjour,
-            
+
             L'APK de l'application a été généré.  
-            Vous pouvez le télécharger ici : ${{ steps.upload-apk.outputs.artifact_url }}
-            
+            Vous pouvez le télécharger ici : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts
+
             Cordialement.
+
           to: "wkhlaifi@smartech-tn.com"
