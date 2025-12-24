@@ -8,14 +8,16 @@ on:
 jobs:
   build:
     name: Build APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       PATH: $HOME/.local/bin:$PATH   # pour que rclone installé localement soit trouvé
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout repository sans tar
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       # 2️⃣ Setup Node.js
       - name: Set up Node.js
@@ -56,6 +58,7 @@ jobs:
         run: |
           curl -O https://downloads.rclone.org/v1.72.1/rclone-v1.72.1-linux-amd64.zip
           unzip rclone-v1.72.1-linux-amd64.zip
+          mkdir -p ~/.local/bin
           cp rclone-v1.72.1-linux-amd64/rclone ~/.local/bin/
           chmod +x ~/.local/bin/rclone
 
@@ -86,7 +89,7 @@ jobs:
             Bonjour,
 
             L'APK de l'application a été généré.  
-            Vous pouvez le télécharger ici (OneDrive) : ${{ env.APK_LINK }}
+            Vous pouvez le télécharger directement ici (OneDrive) : ${{ env.APK_LINK }}
 
             Cordialement.
           to: "wkhlaifi@smartech-tn.com"
