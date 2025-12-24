@@ -13,10 +13,6 @@ jobs:
       PATH: $HOME/.local/bin:$PATH   # pour que rclone installé localement soit trouvé
 
     steps:
-      # 0️⃣ Installer tar pour le checkout
-      - name: Install tar
-        run: sudo apt-get update && sudo apt-get install -y tar unzip
-
       # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
