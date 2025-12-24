@@ -10,48 +10,44 @@ jobs:
     name: Build APK
     runs-on: ubuntu-latest
     env:
-      PATH: $HOME/.local/bin:$PATH  # pour que rclone installé localement soit trouvé
+      PATH: $HOME/.local/bin:$PATH
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Setup Java
-      - name: Set up JDK
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 5️⃣ Grant execute permission for gradlew
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      # 6️⃣ Build Release APK
       - name: Build Release APK
         run: |
           cd android
           ./gradlew assembleRelease
 
-      # 7️⃣ Upload APK comme artifact GitHub
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
-      # 8️⃣ Installer rclone localement (sans sudo)
+      # Installer tar et unzip avant rclone
+      - name: Install tar and unzip
+        run: sudo apt-get update && sudo apt-get install -y tar unzip
+
       - name: Install rclone locally
         run: |
           curl -O https://downloads.rclone.org/v1.72.1/rclone-v1.72.1-linux-amd64.zip
@@ -61,20 +57,17 @@ jobs:
           chmod +x ~/.local/bin/rclone
           rclone version
 
-      # 9️⃣ Ajouter rclone config depuis secret
       - name: Setup rclone config
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
-      # 🔟 Upload APK vers OneDrive et obtenir lien partageable
       - name: Upload APK to OneDrive
         run: |
           rclone copy android/app/build/outputs/apk/release/app-release.apk onedrive2:ApkUploads -v
           LINK=$(rclone link onedrive2:ApkUploads/app-release.apk)
           echo "APK_LINK=$LINK" >> $GITHUB_ENV
 
-      # 1️⃣1️⃣ Envoyer email avec le lien OneDrive
       - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
