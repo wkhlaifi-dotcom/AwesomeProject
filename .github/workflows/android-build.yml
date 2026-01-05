@@ -66,7 +66,6 @@ jobs:
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
-      # 🔟 Upload APK vers OneDrive et obtenir lien partageable
       - name: Upload APK to OneDrive
         run: |
           rclone copy android/app/build/outputs/apk/release/app-release.apk onedrive2:ApkUploads -v
@@ -89,5 +88,5 @@ jobs:
             L'APK de l'application a été généré.  
             Vous pouvez le télécharger ici (OneDrive) : ${{ env.APK_LINK }}
 
-            Cordialement.
+            Cordialement wafa.
           to: "wkhlaifi@smartech-tn.com"
