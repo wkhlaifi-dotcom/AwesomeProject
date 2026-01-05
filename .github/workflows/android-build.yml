@@ -1,5 +1,4 @@
-name: Build, Upload APK and Send Email
-
+name: Build and Send Android APK
 on:
   push:
     branches:
@@ -9,8 +8,6 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
-    env:
-      PATH: $HOME/.local/bin:$PATH   # Pour que rclone installé localement soit trouvé
 
     steps:
       # 1️⃣ Checkout repository
@@ -44,35 +41,15 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
-      # 7️⃣ Upload APK comme artifact GitHub
-      - name: Upload APK artifact
+      # 7️⃣ Upload APK comme artifact
+      - name: Upload APK
+        id: upload-apk
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
-      # 8️⃣ Installer rclone localement (sans sudo)
-      - name: Install rclone locally
-        run: |
-          curl -O https://downloads.rclone.org/v1.72.1/rclone-v1.72.1-linux-amd64.zip
-          unzip rclone-v1.72.1-linux-amd64.zip
-          mkdir -p ~/.local/bin
-          cp rclone-v1.72.1-linux-amd64/rclone ~/.local/bin/
-          chmod +x ~/.local/bin/rclone
-
-      # 9️⃣ Ajouter rclone config depuis secret
-      - name: Setup rclone config
-        run: |
-          mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
-
-      - name: Upload APK to OneDrive
-        run: |
-          rclone copy android/app/build/outputs/apk/release/app-release.apk onedrive2:ApkUploads -v
-          LINK=$(rclone link onedrive2:ApkUploads/app-release.apk)
-          echo "APK_LINK=$LINK" >> $GITHUB_ENV
-
-      # 1️⃣1️⃣ Envoyer email avec le lien OneDrive
+      # 8️⃣ Envoi email avec lien vers l’artifact
       - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
@@ -86,7 +63,8 @@ jobs:
             Bonjour,
 
             L'APK de l'application a été généré.  
-            Vous pouvez le télécharger ici (OneDrive) : ${{ env.APK_LINK }}
+            Vous pouvez le télécharger ici : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts
 
-            Cordialement wafa.
+            Cordialement.
+
           to: "wkhlaifi@smartech-tn.com"
