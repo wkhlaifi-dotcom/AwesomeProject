@@ -48,8 +48,6 @@ jobs:
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
-
-      # 8️⃣ Envoi email avec lien vers l’artifact
       - name: Send email with APK link
         uses: dawidd6/action-send-mail@v3
         with:
